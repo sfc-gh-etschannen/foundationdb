@@ -51,10 +51,10 @@ public:
 		void send(U &&value) {
 			stream.send(std::forward<U>(value));
 		}
-		void sendError(Error e) { parallelStream->sendError(e); }
+		void sendError(Error e) { stream.sendError(e); }
 		void finish() {
 			releaser.release(); // Release before destruction to free up pending fragments
-			stream.sendError(end_of_stream());
+			sendError(end_of_stream());
 		}
 	};
 
@@ -63,6 +63,7 @@ private:
 	size_t fragmentsProcessed { 0 };
 	PromiseStream<T> results;
 	Future<Void> flusher;
+	Future<Void> error;
 
 public:
 
@@ -113,9 +114,20 @@ public:
 		return fragment.getPtr();
 	}
 
+	ACTOR static Future<Void> errorActor(ParallelStream<T>* self, Error e) {
+		Fragment* fragment = wait(self->createFragment());
+		fragment->sendError(e);
+		return Void();
+	}
+
 	Future<Fragment*> createFragment() { return createFragmentImpl(this); }
 
-	void sendError(Error e) { results.sendError(e); }
+	void sendError(Error e) {
+		if (error.isValid()) {
+			return; // sending a second error to the same stream is a noop
+		}
+		error = errorActor(this, e);
+	}
 };
 
 #include "flow/unactorcompiler.h"

@@ -2896,7 +2896,6 @@ ACTOR Future<Void> getRangeStream(PromiseStream<RangeResult> _results, Database 
 		state Standalone<VectorRef<KeyRef>> splitPoints =
 			wait(getRangeSplitPoints(cx, ssi.first, CLIENT_KNOBS->RANGESTREAM_FRAGMENT_SIZE));
 		state std::vector<KeyRange> toSend;
-		// state std::vector<Future<std::list<KeyRangeRef>::iterator>> outstandingRequests;
 		state std::vector<Future<Void>> outstandingRequests;
 
 		if (!splitPoints.empty()) {
