@@ -31,6 +31,7 @@
 #include "fdbclient/CommitTransaction.h"
 #include "fdbserver/RatekeeperInterface.h"
 #include "fdbclient/TagThrottle.h"
+#include "fdbclient/LogSystemConfig.h"
 
 #include "fdbrpc/Stats.h"
 #include "fdbrpc/TimedRequest.h"
@@ -114,6 +115,7 @@ struct ClientDBInfo {
 
 	ClientDBInfo()
 	  : clientTxnInfoSampleRate(std::numeric_limits<double>::infinity()), clientTxnInfoSizeLimit(-1),
+	  	logSystemConfig(0),
 	    transactionTagSampleRate(CLIENT_KNOBS->READ_TAG_SAMPLE_RATE),
 	    transactionTagSampleCost(CLIENT_KNOBS->COMMIT_SAMPLE_COST) {}
 

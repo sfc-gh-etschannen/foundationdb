@@ -55,7 +55,7 @@ struct ServerDBInfo {
 	Optional<LatencyBandConfig> latencyBandConfig;
 	int64_t infoGeneration;
 
-	ServerDBInfo() : recoveryCount(0), recoveryState(RecoveryState::UNINITIALIZED), logSystemConfig(0), infoGeneration(0) {}
+	ServerDBInfo() : recoveryCount(0), recoveryState(RecoveryState::UNINITIALIZED), infoGeneration(0) {}
 
 	bool operator == (ServerDBInfo const& r) const { return id == r.id; }
 	bool operator != (ServerDBInfo const& r) const { return id != r.id; }
