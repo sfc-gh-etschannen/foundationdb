@@ -2879,7 +2879,7 @@ ACTOR Future<Standalone<VectorRef<const char*>>> getAddressesForKeyActor(Key key
 	return addresses;
 }
 
-ACTOR monitorDBInfo(Database cx) {
+ACTOR Future<Void> monitorDBInfo(Database cx) {
 	loop {
 		wait(cx->clientInfo->onChange());
 	}
