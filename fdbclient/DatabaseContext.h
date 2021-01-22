@@ -37,6 +37,7 @@
 #include "fdbclient/EventTypes.actor.h"
 #include "fdbrpc/ContinuousSample.h"
 #include "fdbrpc/Smoother.h"
+#include "fdbclient/LogSystem.h"
 
 class StorageServerInfo : public ReferencedInterface<StorageServerInterface> {
 public:
