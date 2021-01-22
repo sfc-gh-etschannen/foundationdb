@@ -484,17 +484,22 @@ ACTOR static Future<Void> clientStatusUpdateActor(DatabaseContext *cx) {
 	}
 }
 
-ACTOR static Future<Void> monitorProxiesChange(Reference<AsyncVar<ClientDBInfo>> clientDBInfo, AsyncTrigger *triggerVar) {
+ACTOR static Future<Void> monitorInfoChange(Reference<AsyncVar<ClientDBInfo>> clientDBInfo, AsyncTrigger *triggerVar) {
 	state vector<CommitProxyInterface> curCommitProxies;
 	state vector< GrvProxyInterface > curGrvProxies;
+	state LogSystemConfig curLogSystem;
 	curCommitProxies = clientDBInfo->get().commitProxies;
 	curGrvProxies = clientDBInfo->get().grvProxies;
+	curLogSystem = clientDBInfo->get().logSystemConfig;
 
 	loop{
 		wait(clientDBInfo->onChange());
-		if (clientDBInfo->get().commitProxies != curCommitProxies || clientDBInfo->get().grvProxies != curGrvProxies) {
+		if (clientDBInfo->get().commitProxies != curCommitProxies ||
+		      clientDBInfo->get().grvProxies != curGrvProxies ||
+			  clientDBInfo->get().logSystemConfig != curLogSystem) {
 			curCommitProxies = clientDBInfo->get().commitProxies;
 			curGrvProxies = clientDBInfo->get().grvProxies;
+			curLogSystem = clientDBInfo->get().logSystemConfig;
 			triggerVar->trigger();
 		}
 	}
@@ -669,7 +674,7 @@ ACTOR static Future<HealthMetrics> getHealthMetricsActor(DatabaseContext *cx, bo
 		CLIENT_KNOBS->DETAILED_HEALTH_METRICS_MAX_STALENESS;
 	loop {
 		choose {
-			when(wait(cx->onProxiesChanged())) {}
+			when(wait(cx->onClientInfoChanged())) {}
 			when(GetHealthMetricsReply rep =
 				 wait(basicLoadBalance(cx->getGrvProxies(false), &GrvProxyInterface::getHealthMetrics,
 							 GetHealthMetricsRequest(sendDetailedRequest)))) {
@@ -895,7 +900,7 @@ DatabaseContext::DatabaseContext(Reference<AsyncVar<Reference<ClusterConnectionF
 	getValueSubmitted.init(LiteralStringRef("NativeAPI.GetValueSubmitted"));
 	getValueCompleted.init(LiteralStringRef("NativeAPI.GetValueCompleted"));
 
-	monitorProxiesInfoChange = monitorProxiesChange(clientInfo, &proxiesChangeTrigger);
+	monitorClientInfoChange = monitorInfoChange(clientInfo, &infoChangeTrigger);
 	clientStatusUpdater.actor = clientStatusUpdateActor(this);
 	cacheListMonitor = monitorCacheList(this);
 
@@ -1052,7 +1057,7 @@ Database DatabaseContext::create(Reference<AsyncVar<ClientDBInfo>> clientInfo, F
 
 DatabaseContext::~DatabaseContext() {
 	cacheListMonitor.cancel();
-	monitorProxiesInfoChange.cancel();
+	monitorClientInfoChange.cancel();
 	for(auto it = server_interf.begin(); it != server_interf.end(); it = server_interf.erase(it))
 		it->second->notifyContextDestroyed();
 	ASSERT_ABORT( server_interf.empty() );
@@ -1131,8 +1136,8 @@ void DatabaseContext::invalidateCache( const KeyRangeRef& keys ) {
 	locationCache.insert(KeyRangeRef(begin, end), Reference<LocationInfo>());
 }
 
-Future<Void> DatabaseContext::onProxiesChanged() {
-	return this->proxiesChangeTrigger.onTrigger();
+Future<Void> DatabaseContext::onClientInfoChanged() {
+	return this->infoChangeTrigger.onTrigger();
 }
 
 bool DatabaseContext::sampleReadTags() const {
@@ -1616,7 +1621,7 @@ ACTOR Future<Reference<CommitProxyInfo>> getCommitProxiesFuture(DatabaseContext*
 		Reference<CommitProxyInfo> commitProxies = cx->getCommitProxies(useProvisionalProxies);
 		if (commitProxies)
 			return commitProxies;
-		wait( cx->onProxiesChanged() );
+		wait( cx->onClientInfoChanged() );
 	}
 }
 
@@ -1748,7 +1753,7 @@ ACTOR Future<pair<KeyRange, Reference<LocationInfo>>> getKeyLocation_internal(Da
 	loop {
 		++cx->transactionKeyServerLocationRequests;
 		choose {
-			when (wait(cx->onProxiesChanged())) {}
+			when (wait(cx->onClientInfoChanged())) {}
 			when(GetKeyServerLocationsReply rep = wait(basicLoadBalance(
 			         cx->getCommitProxies(info.useProvisionalProxies), &CommitProxyInterface::getKeyServersLocations,
 			         GetKeyServerLocationsRequest(span.context, key, Optional<KeyRef>(), 100, isBackward, key.arena()),
@@ -1797,7 +1802,7 @@ ACTOR Future<vector<pair<KeyRange, Reference<LocationInfo>>>> getKeyRangeLocatio
 	loop {
 		++cx->transactionKeyServerLocationRequests;
 		choose {
-			when ( wait( cx->onProxiesChanged() ) ) {}
+			when ( wait( cx->onClientInfoChanged() ) ) {}
 			when(GetKeyServerLocationsReply _rep = wait(basicLoadBalance(
 			         cx->getCommitProxies(info.useProvisionalProxies), &CommitProxyInterface::getKeyServersLocations,
 			         GetKeyServerLocationsRequest(span.context, keys.begin, keys.end, limit, reverse, keys.arena()),
@@ -2060,7 +2065,7 @@ ACTOR Future<Version> waitForCommittedVersion( Database cx, Version version, Spa
 	try {
 		loop {
 			choose {
-				when ( wait( cx->onProxiesChanged() ) ) {}
+				when ( wait( cx->onClientInfoChanged() ) ) {}
 				when( GetReadVersionReply v = wait(basicLoadBalance(
 				         cx->getGrvProxies(false), &GrvProxyInterface::getConsistentReadVersion,
 				         GetReadVersionRequest(span.context, 0, TransactionPriority::IMMEDIATE), cx->taskID))) {
@@ -2083,7 +2088,7 @@ ACTOR Future<Version> getRawVersion( Database cx, SpanID spanContext ) {
 	state Span span("NAPI:getRawVersion"_loc, { spanContext });
 	loop {
 		choose {
-			when ( wait( cx->onProxiesChanged() ) ) {}
+			when ( wait( cx->onClientInfoChanged() ) ) {}
 			when ( GetReadVersionReply v =
 			         wait(basicLoadBalance(cx->getGrvProxies(false), &GrvProxyInterface::getConsistentReadVersion,
 			                               GetReadVersionRequest(spanContext, 0, TransactionPriority::IMMEDIATE), cx->taskID))) {
@@ -2879,15 +2884,84 @@ ACTOR Future<Standalone<VectorRef<const char*>>> getAddressesForKeyActor(Key key
 	return addresses;
 }
 
-ACTOR Future<Void> monitorDBInfo(Database cx) {
-	loop {
-		wait(cx->clientInfo->onChange());
+	std::map<Tag, Reference<ILogSystem::IPeekCursor>> peekCursors;
+
+Reference<LogSystem> DatabaseContext::getLogSystem() {
+	if (logSystemLastChange != clientInfo->get().id) {
+		logSystemLastChange = clientInfo->get().id;
+		logSystem = ILogSystem::fromClientDBInfo(dbId, clientInfo->get());
 	}
+	return logSystem;
 }
 
 ACTOR Future<Standalone<VectorRef<MutationAndVersionRef>>> getTaggedMutations(Database cx, Tag tag, Version startVersion) {
-	state Standalone<VectorRef<MutationAndVersionRef>> result;
-	return result;
+	state Reference<ILogSystem::IPeekCursor>& cursor = cx->peekCursors[tag];
+	if(cursor->version().version > startVersion) {
+		cursor = Reference<ILogSystem::IPeekCursor>();
+	}
+	state Future<Void> onInfoChange = cursor ? cx->onClientInfoChanged() : Void();
+
+	loop {
+		if(!cursor || !cursor->hasMessage()) {
+			loop {
+				choose {
+					when (wait(cursor ? cursor->getMore(TaskPriority::TLogCommit) : Never())) {
+						if(cursor->hasMessage()) {
+							break;
+						}
+					}
+					when (wait(onInfoChange)) {
+						if (cx->getLogSystem()) {
+							cursor = cx->getLogSystem()->peek(cx->dbId, startVersion, tag);
+						} else {
+							cursor = Reference<ILogSystem::IPeekCursor>();
+						}
+						onInfoChange = cx->onClientInfoChanged();
+					}
+				}
+			}
+		}
+
+		Standalone<VectorRef<MutationAndVersionRef>> result;
+		while(cursor->hasMessage()) {
+			bool skipMutation = false;
+			for (Tag tag : cursor->getTags()) {
+				if (tag.locality == tagLocalitySpecial || tag.locality == tagLocalityTxs) {
+					skipMutation = true;
+					break;
+				}
+			}
+			if(skipMutation) {
+				cursor->nextMessage();
+				continue;
+			}
+
+			ArenaReader reader(cursor->arena(), cursor->getMessage(), AssumeVersion(currentProtocolVersion));
+
+			// Return false for LogProtocolMessage and SpanContextMessage metadata messages.
+			if (LogProtocolMessage::isNextIn(reader)) {
+				cursor->nextMessage();
+				continue;
+			}
+			if (reader.protocolVersion().hasSpanContext() && SpanContextMessage::isNextIn(reader)) {
+				cursor->nextMessage();
+				continue;
+			}
+
+			MutationAndVersionRef m;
+			reader >> m.mutation;
+			if(normalKeys.contains(m.mutation.param1) || m.mutation.param1 == metadataVersionKey) {
+				m.version = cursor->version();
+				result.push_back_deep(result.arena(), m);
+			}
+			cursor->nextMessage();
+		}
+		if(result.size()) {
+			cursor->getMore();
+			return result;
+		}
+		startVersion = cursor->version().version;
+	}
 }
 
 Future< Standalone< VectorRef< const char*>>> Transaction::getAddressesForKey( const Key& key ) {
@@ -3491,7 +3565,7 @@ ACTOR static Future<Void> tryCommit( Database cx, Reference<TransactionLogInfo> 
 		}
 
 		choose {
-			when ( wait( cx->onProxiesChanged() ) ) {
+			when ( wait( cx->onClientInfoChanged() ) ) {
 				reply.cancel();
 				throw request_maybe_delivered();
 			}
@@ -3919,7 +3993,7 @@ ACTOR Future<GetReadVersionReply> getConsistentReadVersion(SpanID parentSpan, Da
 			state GetReadVersionRequest req( span.context, transactionCount, priority, flags, tags, debugID );
 
 			choose {
-				when ( wait( cx->onProxiesChanged() ) ) {}
+				when ( wait( cx->onClientInfoChanged() ) ) {}
 				when ( GetReadVersionReply v = wait( basicLoadBalance( cx->getGrvProxies(flags & GetReadVersionRequest::FLAG_USE_PROVISIONAL_PROXIES), &GrvProxyInterface::getConsistentReadVersion, req, cx->taskID ) ) ) {
 					if(tags.size() != 0) {
 						auto &priorityThrottledTags = cx->throttledTags[priority];
@@ -4471,7 +4545,7 @@ ACTOR Future<Standalone<VectorRef<DDMetricsRef>>> waitDataDistributionMetricsLis
                                                                                int shardLimit) {
 	loop {
 		choose {
-			when(wait(cx->onProxiesChanged())) {}
+			when(wait(cx->onClientInfoChanged())) {}
 			when(ErrorOr<GetDDMetricsReply> rep =
 			         wait(errorOr(basicLoadBalance(cx->getCommitProxies(false), &CommitProxyInterface::getDDMetrics,
 			                                       GetDDMetricsRequest(keys, shardLimit))))) {
@@ -4629,7 +4703,7 @@ ACTOR Future<Void> snapCreate(Database cx, Standalone<StringRef> snapCmd, UID sn
 	try {
 		loop {
 			choose {
-				when(wait(cx->onProxiesChanged())) {}
+				when(wait(cx->onClientInfoChanged())) {}
 				when(wait(basicLoadBalance(cx->getCommitProxies(false), &CommitProxyInterface::proxySnapReq,
 				                           ProxySnapRequest(snapCmd, snapUID, snapUID), cx->taskID,
 				                           true /*atmostOnce*/))) {
@@ -4658,7 +4732,7 @@ ACTOR Future<bool> checkSafeExclusions(Database cx, vector<AddressExclusion> exc
 	try {
 		loop {
 			choose {
-				when(wait(cx->onProxiesChanged())) {}
+				when(wait(cx->onClientInfoChanged())) {}
 				when(ExclusionSafetyCheckReply _ddCheck =
 				         wait(basicLoadBalance(cx->getCommitProxies(false),
 				                               &CommitProxyInterface::exclusionSafetyCheckReq, req, cx->taskID))) {

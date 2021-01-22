@@ -1038,7 +1038,7 @@ ACTOR Future<Void> postResolution(CommitBatchContext* self) {
 					wait(yield());
 					break;
 				}
-				when(wait(pProxyCommitData->cx->onProxiesChanged())) {}
+				when(wait(pProxyCommitData->cx->onClientInfoChanged())) {}
 				when(GetRawCommittedVersionReply v = wait(pProxyCommitData->master.getLiveCommittedVersion.getReply(
 				         GetRawCommittedVersionRequest(waitVersionSpan.context, debugID), TaskPriority::GetLiveCommittedVersionReply))) {
 					if(v.version > pProxyCommitData->committedVersion.get()) {

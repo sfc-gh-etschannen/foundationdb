@@ -169,7 +169,7 @@ public:
 	Reference<CommitProxyInfo> getCommitProxies(bool useProvisionalProxies);
 	Future<Reference<CommitProxyInfo>> getCommitProxiesFuture(bool useProvisionalProxies);
 	Reference<GrvProxyInfo> getGrvProxies(bool useProvisionalProxies);
-	Future<Void> onProxiesChanged();
+	Future<Void> onClientInfoChanged();
 	Future<HealthMetrics> getHealthMetrics(bool detailed);
 
 	// Update the watch counter for the database
@@ -218,8 +218,8 @@ public:
 
 	// Key DB-specific information
 	Reference<AsyncVar<Reference<ClusterConnectionFile>>> connectionFile;
-	AsyncTrigger proxiesChangeTrigger;
-	Future<Void> monitorProxiesInfoChange;
+	AsyncTrigger infoChangeTrigger;
+	Future<Void> monitorClientInfoChange;
 	Reference<CommitProxyInfo> commitProxies;
 	Reference<GrvProxyInfo> grvProxies;
 	bool proxyProvisional; // Provisional commit proxy and grv proxy are used at the same time.
@@ -358,9 +358,11 @@ public:
 	static bool debugUseTags;
 	static const std::vector<std::string> debugTransactionTagChoices; 
 
+	UID logSystemLastChange;
 	Reference<ILogSystem> logSystem;
 	std::map<Tag, Reference<ILogSystem::IPeekCursor>> peekCursors;
-	Future<Void> monitorLogSystem;
+
+	Reference<ILogSystem> getLogSystem();
 
 	[[nodiscard]] Future<Standalone<VectorRef<MutationAndVersionRef>>> getTaggedMutations(Tag tag, Version startVersion);
 };

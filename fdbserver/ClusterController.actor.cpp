@@ -2026,7 +2026,8 @@ void clusterRegisterMaster( ClusterControllerData* self, RegisterMasterRequest c
 
 	// Construct the client information
 	if (db->clientInfo->get().commitProxies != req.commitProxies ||
-	    db->clientInfo->get().grvProxies != req.grvProxies) {
+	    db->clientInfo->get().grvProxies != req.grvProxies ||
+		!dbInfo.client.logSystemConfig.isEqual(req.logSystemConfig)) {
 		isChanged = true;
 		ClientDBInfo clientInfo;
 		clientInfo.id = deterministicRandom()->randomUniqueID();
@@ -2034,13 +2035,9 @@ void clusterRegisterMaster( ClusterControllerData* self, RegisterMasterRequest c
 		clientInfo.grvProxies = req.grvProxies;
 		clientInfo.clientTxnInfoSampleRate = db->clientInfo->get().clientTxnInfoSampleRate;
 		clientInfo.clientTxnInfoSizeLimit = db->clientInfo->get().clientTxnInfoSizeLimit;
+		clientInfo.logSystemConfig = req.logSystemConfig;
 		db->clientInfo->set( clientInfo );
 		dbInfo.client = db->clientInfo->get();
-	}
-
-	if( !dbInfo.client.logSystemConfig.isEqual(req.logSystemConfig) ) {
-		isChanged = true;
-		dbInfo.client.logSystemConfig = req.logSystemConfig;
 	}
 
 	if( dbInfo.resolvers != req.resolvers ) {

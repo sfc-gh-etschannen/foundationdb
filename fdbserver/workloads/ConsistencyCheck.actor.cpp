@@ -406,7 +406,7 @@ struct ConsistencyCheckWorkload : TestWorkload
 						}
 					} // End of For
 				}
-				when(wait(cx->onProxiesChanged())) { }
+				when(wait(cx->onClientInfoChanged())) { }
 			} // End of choose
 
 			if (!keyServersInsertedForThisIteration) // Retry the entire workflow

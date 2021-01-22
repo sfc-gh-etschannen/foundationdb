@@ -432,7 +432,7 @@ struct BackupData {
 			GetReadVersionRequest request(span.context, 0, TransactionPriority::DEFAULT,
 			                                     GetReadVersionRequest::FLAG_USE_MIN_KNOWN_COMMITTED_VERSION);
 			choose {
-				when(wait(self->cx->onProxiesChanged())) {}
+				when(wait(self->cx->onClientInfoChanged())) {}
 				when(GetReadVersionReply reply = wait(basicLoadBalance(self->cx->getGrvProxies(false),
 				                                                  &GrvProxyInterface::getConsistentReadVersion,
 				                                                  request, self->cx->taskID))) {
