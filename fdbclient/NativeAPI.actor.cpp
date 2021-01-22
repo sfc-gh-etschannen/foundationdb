@@ -496,7 +496,7 @@ ACTOR static Future<Void> monitorInfoChange(Reference<AsyncVar<ClientDBInfo>> cl
 		wait(clientDBInfo->onChange());
 		if (clientDBInfo->get().commitProxies != curCommitProxies ||
 		      clientDBInfo->get().grvProxies != curGrvProxies ||
-			  clientDBInfo->get().logSystemConfig != curLogSystem) {
+			  !clientDBInfo->get().logSystemConfig.isEqual(curLogSystem)) {
 			curCommitProxies = clientDBInfo->get().commitProxies;
 			curGrvProxies = clientDBInfo->get().grvProxies;
 			curLogSystem = clientDBInfo->get().logSystemConfig;
@@ -2886,7 +2886,7 @@ ACTOR Future<Standalone<VectorRef<const char*>>> getAddressesForKeyActor(Key key
 
 	std::map<Tag, Reference<ILogSystem::IPeekCursor>> peekCursors;
 
-Reference<LogSystem> DatabaseContext::getLogSystem() {
+Reference<ILogSystem> DatabaseContext::getLogSystem() {
 	if (logSystemLastChange != clientInfo->get().id) {
 		logSystemLastChange = clientInfo->get().id;
 		logSystem = ILogSystem::fromClientDBInfo(dbId, clientInfo->get());
