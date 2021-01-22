@@ -38,6 +38,10 @@ set(FDBCLIENT_SRCS
   KeyRangeMap.h
   Knobs.cpp
   Knobs.h
+  LogProtocolMessage.h
+  LogSystem.h
+  LogSystemConfig.h
+  LogSystemPeekCursor.actor.cpp
   ManagementAPI.actor.cpp
   ManagementAPI.actor.h
   CommitProxyInterface.h
@@ -70,12 +74,14 @@ set(FDBCLIENT_SRCS
   Subspace.h
   SystemData.cpp
   SystemData.h
+  TagPartitionedLogSystem.actor.cpp
   TagThrottle.actor.cpp
   TagThrottle.h
   TaskBucket.actor.cpp
   TaskBucket.h
   ThreadSafeTransaction.cpp
   ThreadSafeTransaction.h
+  TLogInterface.h
   Tuple.cpp
   Tuple.h
   VersionedMap.actor.h

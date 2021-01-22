@@ -39,13 +39,9 @@ set(FDBSERVER_SRCS
   LatencyBandConfig.h
   LeaderElection.actor.cpp
   LeaderElection.h
-  LogProtocolMessage.h
   LogRouter.actor.cpp
-  LogSystem.h
-  LogSystemConfig.h
   LogSystemDiskQueueAdapter.actor.cpp
   LogSystemDiskQueueAdapter.h
-  LogSystemPeekCursor.actor.cpp
   MasterInterface.h
   MetricLogger.actor.cpp
   MetricLogger.h
@@ -98,11 +94,9 @@ set(FDBSERVER_SRCS
   StorageMetrics.actor.h
   StorageMetrics.h
   storageserver.actor.cpp
-  TagPartitionedLogSystem.actor.cpp
   template_fdb.h
   tester.actor.cpp
   TesterInterface.actor.h
-  TLogInterface.h
   TLogServer.actor.cpp
   VersionedBTree.actor.cpp
   VFSAsync.cpp
