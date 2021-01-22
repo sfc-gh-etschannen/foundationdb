@@ -3839,10 +3839,10 @@ ACTOR Future<Void> storageServerCore( StorageServer* self, StorageServerInterfac
 				TEST( self->logSystem );  // shardServer dbInfo changed
 				dbInfoChange = self->db->onChange();
 				if( self->db->get().recoveryState >= RecoveryState::ACCEPTING_COMMITS ) {
-					self->logSystem = ILogSystem::fromServerDBInfo( self->thisServerID, self->db->get() );
+					self->logSystem = ILogSystem::fromClientDBInfo( self->thisServerID, self->db->get().client );
 					if (self->logSystem) {
-						if(self->db->get().logSystemConfig.recoveredAt.present()) {
-							self->poppedAllAfter = self->db->get().logSystemConfig.recoveredAt.get();
+						if(self->db->get().client.logSystemConfig.recoveredAt.present()) {
+							self->poppedAllAfter = self->db->get().client.logSystemConfig.recoveredAt.get();
 						}
 						self->logCursor = self->logSystem->peekSingle( self->thisServerID, self->version.get() + 1, self->tag, self->history );
 						self->popVersion( self->durableVersion.get() + 1, true );

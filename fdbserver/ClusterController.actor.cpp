@@ -1092,7 +1092,7 @@ public:
 		std::vector<WorkerDetails> backup_workers;
 		std::set<NetworkAddress> backup_addresses;
 
-		for( auto& logSet : dbi.logSystemConfig.tLogs ) {
+		for( auto& logSet : dbi.client.logSystemConfig.tLogs ) {
 			for( auto& it : logSet.tLogs ) {
 				auto tlogWorker = id_worker.find(it.interf().filteredLocality.processId());
 				if ( tlogWorker == id_worker.end() )
@@ -1210,7 +1210,7 @@ public:
 
 		bool oldSatelliteFallback = false;
 
-		for(auto& logSet : dbi.logSystemConfig.tLogs) {
+		for(auto& logSet : dbi.client.logSystemConfig.tLogs) {
 			if(region.satelliteTLogPolicy.isValid() && logSet.isLocal && logSet.locality == tagLocalitySatellite) {
 				oldSatelliteFallback = logSet.tLogPolicy->info() != region.satelliteTLogPolicy->info();
 				ASSERT(!oldSatelliteFallback ||
@@ -1356,7 +1356,7 @@ public:
 		if (processId == masterProcessId) return false;
 
 		auto& dbInfo = db.serverInfo->get();
-		for (const auto& tlogset : dbInfo.logSystemConfig.tLogs) {
+		for (const auto& tlogset : dbInfo.client.logSystemConfig.tLogs) {
 			for (const auto& tlog: tlogset.tLogs) {
 				if (tlog.present() && tlog.interf().filteredLocality.processId() == processId) return true;
 			}
@@ -1389,7 +1389,7 @@ public:
 		updateKnownIds(&idUsed);
 
 		auto& dbInfo = db.serverInfo->get();
-		for (const auto& tlogset : dbInfo.logSystemConfig.tLogs) {
+		for (const auto& tlogset : dbInfo.client.logSystemConfig.tLogs) {
 			for (const auto& tlog: tlogset.tLogs) {
 				if (tlog.present()) {
 					idUsed[tlog.interf().filteredLocality.processId()]++;
@@ -1474,7 +1474,7 @@ public:
 		serverInfo.infoGeneration = ++db.dbInfoCount;
 		serverInfo.masterLifetime.ccID = id;
 		serverInfo.clusterInterface = ccInterface;
-		serverInfo.myLocality = locality;
+		serverInfo.client.myLocality = locality;
 		db.serverInfo->set( serverInfo );
 		cx = openDBOnServer(db.serverInfo, TaskPriority::DefaultEndpoint, true, true);
 	}
@@ -2038,9 +2038,9 @@ void clusterRegisterMaster( ClusterControllerData* self, RegisterMasterRequest c
 		dbInfo.client = db->clientInfo->get();
 	}
 
-	if( !dbInfo.logSystemConfig.isEqual(req.logSystemConfig) ) {
+	if( !dbInfo.client.logSystemConfig.isEqual(req.logSystemConfig) ) {
 		isChanged = true;
-		dbInfo.logSystemConfig = req.logSystemConfig;
+		dbInfo.client.logSystemConfig = req.logSystemConfig;
 	}
 
 	if( dbInfo.resolvers != req.resolvers ) {
@@ -2622,7 +2622,7 @@ ACTOR Future<Void> updateDatacenterVersionDifference( ClusterControllerData *sel
 		state Optional<TLogInterface> primaryLog;
 		state Optional<TLogInterface> remoteLog;
 		if(self->db.serverInfo->get().recoveryState >= RecoveryState::ALL_LOGS_RECRUITED) {
-			for(auto& logSet : self->db.serverInfo->get().logSystemConfig.tLogs) {
+			for(auto& logSet : self->db.serverInfo->get().client.logSystemConfig.tLogs) {
 				if(logSet.isLocal && logSet.locality != tagLocalitySatellite) {
 					for(auto& tLog : logSet.tLogs) {
 						if(tLog.present()) {

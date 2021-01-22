@@ -719,7 +719,7 @@ ACTOR Future<Void> grvProxyServerCore(
 	}
 	// Do we need to wait for any db info change? Yes. To update latency band.
 	state Future<Void> dbInfoChange = grvProxyData.db->onChange();
-	grvProxyData.logSystem = ILogSystem::fromServerDBInfo(proxy.id(), grvProxyData.db->get(), false, addActor);
+	grvProxyData.logSystem = ILogSystem::fromClientDBInfo(proxy.id(), grvProxyData.db->get().client, false, addActor);
 
 	grvProxyData.updateLatencyBandConfig(grvProxyData.db->get().latencyBandConfig);
 
@@ -736,7 +736,7 @@ ACTOR Future<Void> grvProxyServerCore(
 				dbInfoChange = grvProxyData.db->onChange();
 
 				if(grvProxyData.db->get().master.id() == master.id() && grvProxyData.db->get().recoveryState >= RecoveryState::RECOVERY_TRANSACTION) {
-					grvProxyData.logSystem = ILogSystem::fromServerDBInfo(proxy.id(), grvProxyData.db->get(), false, addActor);
+					grvProxyData.logSystem = ILogSystem::fromClientDBInfo(proxy.id(), grvProxyData.db->get().client, false, addActor);
 				}
 				grvProxyData.updateLatencyBandConfig(grvProxyData.db->get().latencyBandConfig);
 			}

@@ -987,7 +987,7 @@ ACTOR Future<Void> checkRemoved(Reference<AsyncVar<ServerDBInfo>> db, LogEpoch r
 			TraceEvent("BackupWorkerDisplaced", self->myId)
 			    .detail("RecoveryCount", recoveryCount)
 			    .detail("SavedVersion", self->savedVersion)
-			    .detail("BackupWorkers", describe(db->get().logSystemConfig.tLogs))
+			    .detail("BackupWorkers", describe(db->get().client.logSystemConfig.tLogs))
 			    .detail("DBRecoveryCount", db->get().recoveryCount)
 			    .detail("RecoveryState", (int)db->get().recoveryState);
 			throw worker_removed();
@@ -1059,7 +1059,7 @@ ACTOR Future<Void> backupWorker(BackupInterface interf, InitializeBackupRequest 
 		loop choose {
 			when(wait(dbInfoChange)) {
 				dbInfoChange = db->onChange();
-				Reference<ILogSystem> ls = ILogSystem::fromServerDBInfo(self.myId, db->get(), true);
+				Reference<ILogSystem> ls = ILogSystem::fromClientDBInfo(self.myId, db->get().client, true);
 				bool hasPseudoLocality = ls.isValid() && ls->hasPseudoLocality(tagLocalityBackup);
 				if (hasPseudoLocality) {
 					self.logSystem.set(ls);

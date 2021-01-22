@@ -179,7 +179,7 @@ ACTOR Future<std::pair<int64_t,int64_t>> getTLogQueueInfo( Database cx, Referenc
 	}
 
 	state std::vector<Future<TraceEventFields>> messages;
-	state std::vector<TLogInterface> tlogs = dbInfo->get().logSystemConfig.allPresentLogs();
+	state std::vector<TLogInterface> tlogs = dbInfo->get().client.logSystemConfig.allPresentLogs();
 	for(int i = 0; i < tlogs.size(); i++) {
 		auto itr = workersMap.find(tlogs[i].address());
 		if(itr == workersMap.end()) {

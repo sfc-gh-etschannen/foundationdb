@@ -216,4 +216,9 @@ struct CommitTransactionRef {
 	}
 };
 
+struct MutationAndVersionRef {
+	MutationRef mutation;
+	LogMessageVersion version;
+};
+
 #endif

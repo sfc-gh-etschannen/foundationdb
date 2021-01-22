@@ -1175,7 +1175,7 @@ struct ConsistencyCheckWorkload : TestWorkload
 		state std::vector<StorageServerInterface> storageServers = wait(getStorageServers(cx));
 		state std::vector<WorkerInterface> coordWorkers = wait(getCoordWorkers(cx, self->dbInfo));
 		auto& db = self->dbInfo->get();
-		state std::vector<TLogInterface> logs = db.logSystemConfig.allPresentLogs();
+		state std::vector<TLogInterface> logs = db.client.logSystemConfig.allPresentLogs();
 
 		state std::vector<WorkerDetails>::iterator itr;
 		state bool foundExtraDataStore = false;
@@ -1498,7 +1498,7 @@ struct ConsistencyCheckWorkload : TestWorkload
 		// Check LogRouter
 		if (g_network->isSimulated() && config.usableRegions> 1 && g_simulator.primaryDcId.present() &&
 			!g_simulator.datacenterDead(g_simulator.primaryDcId) && !g_simulator.datacenterDead(g_simulator.remoteDcId)) {
-			for (auto &tlogSet : db.logSystemConfig.tLogs) {
+			for (auto &tlogSet : db.client.logSystemConfig.tLogs) {
 				if (!tlogSet.isLocal && tlogSet.logRouters.size()) {
 					for (auto &logRouter : tlogSet.logRouters) {
 						if (!nonExcludedWorkerProcessMap.count(logRouter.interf().address())) {

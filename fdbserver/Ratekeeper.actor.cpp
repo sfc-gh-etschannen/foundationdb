@@ -1358,12 +1358,12 @@ ACTOR Future<Void> ratekeeper(RatekeeperInterface rkInterf, Reference<AsyncVar<S
 	TraceEvent("RkStorageServerQueueSizeParameters", rkInterf.id()).detail("Target", SERVER_KNOBS->TARGET_BYTES_PER_STORAGE_SERVER).detail("Spring", SERVER_KNOBS->SPRING_BYTES_STORAGE_SERVER).detail("EBrake", SERVER_KNOBS->STORAGE_HARD_LIMIT_BYTES)
 		.detail("Rate", (SERVER_KNOBS->TARGET_BYTES_PER_STORAGE_SERVER - SERVER_KNOBS->SPRING_BYTES_STORAGE_SERVER) / ((((double)SERVER_KNOBS->MAX_READ_TRANSACTION_LIFE_VERSIONS) / SERVER_KNOBS->VERSIONS_PER_SECOND) + 2.0));
 
-	tlogInterfs = dbInfo->get().logSystemConfig.allLocalLogs();
+	tlogInterfs = dbInfo->get().client.logSystemConfig.allLocalLogs();
 	for (int i = 0; i < tlogInterfs.size(); i++) {
 		tlogTrackers.push_back( splitError( trackTLogQueueInfo(&self, tlogInterfs[i]), err ) );
 	}
 
-	self.remoteDC = dbInfo->get().logSystemConfig.getRemoteDcId();
+	self.remoteDC = dbInfo->get().client.logSystemConfig.getRemoteDcId();
 
 	try {
 		state bool lastLimited = false;
@@ -1431,13 +1431,13 @@ ACTOR Future<Void> ratekeeper(RatekeeperInterface rkInterf, Reference<AsyncVar<S
 			}
 			when (wait(err.getFuture())) {}
 			when (wait(dbInfo->onChange())) {
-				if( tlogInterfs != dbInfo->get().logSystemConfig.allLocalLogs() ) {
-					tlogInterfs = dbInfo->get().logSystemConfig.allLocalLogs();
+				if( tlogInterfs != dbInfo->get().client.logSystemConfig.allLocalLogs() ) {
+					tlogInterfs = dbInfo->get().client.logSystemConfig.allLocalLogs();
 					tlogTrackers = std::vector<Future<Void>>();
 					for( int i = 0; i < tlogInterfs.size(); i++ )
 						tlogTrackers.push_back( splitError( trackTLogQueueInfo(&self, tlogInterfs[i]), err ) );
 				}
-				self.remoteDC = dbInfo->get().logSystemConfig.getRemoteDcId();
+				self.remoteDC = dbInfo->get().client.logSystemConfig.getRemoteDcId();
 			}
 			when ( wait(collection) ) {
 				ASSERT(false);

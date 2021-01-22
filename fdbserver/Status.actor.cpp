@@ -714,7 +714,7 @@ ACTOR static Future<JsonBuilderObject> processStatusFetcher(
 		roles.addRole("ratekeeper", db->get().ratekeeper.get());
 	}
 
-	for(auto& tLogSet : db->get().logSystemConfig.tLogs) {
+	for(auto& tLogSet : db->get().client.logSystemConfig.tLogs) {
 		for(auto& it : tLogSet.logRouters) {
 			if(it.present()) {
 				roles.addRole("router", it.interf());
@@ -722,7 +722,7 @@ ACTOR static Future<JsonBuilderObject> processStatusFetcher(
 		}
 	}
 
-	for(auto& old : db->get().logSystemConfig.oldTLogs) {
+	for(auto& old : db->get().client.logSystemConfig.oldTLogs) {
 		for(auto& tLogSet : old.tLogs) {
 			for(auto& it : tLogSet.logRouters) {
 				if(it.present()) {
@@ -1681,7 +1681,7 @@ ACTOR static Future<vector<std::pair<StorageServerInterface, EventMap>>> getStor
 }
 
 ACTOR static Future<vector<std::pair<TLogInterface, EventMap>>> getTLogsAndMetrics(Reference<AsyncVar<ServerDBInfo>> db, std::unordered_map<NetworkAddress, WorkerInterface> address_workers) {
-	vector<TLogInterface> servers = db->get().logSystemConfig.allPresentLogs();
+	vector<TLogInterface> servers = db->get().client.logSystemConfig.allPresentLogs();
 	vector<std::pair<TLogInterface, EventMap>> results =
 	    wait(getServerMetrics(servers, address_workers, std::vector<std::string>{ "TLogMetrics" }));
 
@@ -2118,14 +2118,14 @@ static JsonBuilderArray tlogFetcher(int* logFaultTolerance, Reference<AsyncVar<S
                                     std::unordered_map<NetworkAddress, WorkerInterface> const& address_workers) {
 	JsonBuilderArray tlogsArray;
 	JsonBuilderObject tlogsStatus;
-	tlogsStatus = tlogFetcher(logFaultTolerance, db->get().logSystemConfig.tLogs, address_workers);
-	tlogsStatus["epoch"] = db->get().logSystemConfig.epoch;
+	tlogsStatus = tlogFetcher(logFaultTolerance, db->get().client.logSystemConfig.tLogs, address_workers);
+	tlogsStatus["epoch"] = db->get().client.logSystemConfig.epoch;
 	tlogsStatus["current"] = true;
-	if (db->get().logSystemConfig.recoveredAt.present()) {
-		tlogsStatus["begin_version"] = db->get().logSystemConfig.recoveredAt.get();
+	if (db->get().client.logSystemConfig.recoveredAt.present()) {
+		tlogsStatus["begin_version"] = db->get().client.logSystemConfig.recoveredAt.get();
 	}
 	tlogsArray.push_back(tlogsStatus);
-	for (auto it : db->get().logSystemConfig.oldTLogs) {
+	for (auto it : db->get().client.logSystemConfig.oldTLogs) {
 		JsonBuilderObject oldTlogsStatus = tlogFetcher(logFaultTolerance, it.tLogs, address_workers);
 		oldTlogsStatus["epoch"] = it.epoch;
 		oldTlogsStatus["current"] = false;

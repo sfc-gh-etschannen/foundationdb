@@ -128,7 +128,7 @@ ACTOR static Future<Void> extractClientInfo( Reference<AsyncVar<ServerDBInfo>> d
 
 Database openDBOnServer( Reference<AsyncVar<ServerDBInfo>> const& db, TaskPriority taskID, bool enableLocalityLoadBalance, bool lockAware ) {
 	auto info = makeReference<AsyncVar<ClientDBInfo>>();
-	return DatabaseContext::create( info, extractClientInfo(db, info), enableLocalityLoadBalance ? db->get().myLocality : LocalityData(), enableLocalityLoadBalance, taskID, lockAware );
+	return DatabaseContext::create( info, extractClientInfo(db, info), enableLocalityLoadBalance ? db->get().client.myLocality : LocalityData(), enableLocalityLoadBalance, taskID, lockAware );
 }
 
 struct ErrorInfo {
@@ -1142,7 +1142,7 @@ ACTOR Future<Void> workerServer(
 		loop choose {
 			when( UpdateServerDBInfoRequest req = waitNext( interf.updateServerDBInfo.getFuture() ) ) {
 				ServerDBInfo localInfo = BinaryReader::fromStringRef<ServerDBInfo>(req.serializedDbInfo, AssumeVersion(currentProtocolVersion));
-				localInfo.myLocality = locality;
+				localInfo.client.myLocality = locality;
 
 				if(localInfo.infoGeneration < dbInfo->get().infoGeneration && localInfo.clusterInterface == dbInfo->get().clusterInterface) {
 					std::vector<Endpoint> rep = req.broadcastInfo;

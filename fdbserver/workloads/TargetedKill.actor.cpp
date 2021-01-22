@@ -107,7 +107,7 @@ struct TargetedKillWorkload : TestWorkload {
 				o = ++o%grvProxies->size();
 			}
 		} else if (self->machineToKill == "tlog") {
-			auto tlogs = self->dbInfo->get().logSystemConfig.allPresentLogs();
+			auto tlogs = self->dbInfo->get().client.logSystemConfig.allPresentLogs();
 			int o = deterministicRandom()->randomInt(0, tlogs.size());
 			for( int i = 0; i < tlogs.size(); i++) {
 				TLogInterface tli = tlogs[o];

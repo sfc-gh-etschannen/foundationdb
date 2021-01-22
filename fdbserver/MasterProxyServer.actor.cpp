@@ -1882,7 +1882,7 @@ ACTOR Future<Void> monitorRemoteCommitted(ProxyCommitData* self) {
 		wait(delay(0)); //allow this actor to be cancelled if we are removed after db changes.
 		state Optional<std::vector<OptionalInterface<TLogInterface>>> remoteLogs;
 		if(self->db->get().recoveryState >= RecoveryState::ALL_LOGS_RECRUITED) {
-			for(auto& logSet : self->db->get().logSystemConfig.tLogs) {
+			for(auto& logSet : self->db->get().client.logSystemConfig.tLogs) {
 				if(!logSet.isLocal) {
 					remoteLogs = logSet.tLogs;
 					for(auto& tLog : logSet.tLogs) {
@@ -2087,7 +2087,7 @@ ACTOR Future<Void> masterProxyServerCore(
 
 	// Wait until we can load the "real" logsystem, since we don't support switching them currently
 	while (!(commitData.db->get().master.id() == master.id() && commitData.db->get().recoveryState >= RecoveryState::RECOVERY_TRANSACTION)) {
-		//TraceEvent("ProxyInit2", proxy.id()).detail("LSEpoch", db->get().logSystemConfig.epoch).detail("Need", epoch);
+		//TraceEvent("ProxyInit2", proxy.id()).detail("LSEpoch", db->get().client.logSystemConfig.epoch).detail("Need", epoch);
 		wait(commitData.db->onChange());
 	}
 	state Future<Void> dbInfoChange = commitData.db->onChange();
@@ -2100,7 +2100,7 @@ ACTOR Future<Void> masterProxyServerCore(
 	for(auto r = rs.begin(); r != rs.end(); ++r)
 		r->value().emplace_back(0,0);
 
-	commitData.logSystem = ILogSystem::fromServerDBInfo(proxy.id(), commitData.db->get(), false, addActor);
+	commitData.logSystem = ILogSystem::fromClientDBInfo(proxy.id(), commitData.db->get().client, false, addActor);
 	commitData.logAdapter = new LogSystemDiskQueueAdapter(commitData.logSystem, Reference<AsyncVar<PeekTxsInfo>>(), 1, false);
 	commitData.txnStateStore = keyValueStoreLogSystem(commitData.logAdapter, proxy.id(), 2e9, true, true, true);
 	createWhitelistBinPathVec(whitelistBinPaths, commitData.whitelistedBinPathVec);
@@ -2138,7 +2138,7 @@ ACTOR Future<Void> masterProxyServerCore(
 		when( wait( dbInfoChange ) ) {
 			dbInfoChange = commitData.db->onChange();
 			if(commitData.db->get().master.id() == master.id() && commitData.db->get().recoveryState >= RecoveryState::RECOVERY_TRANSACTION) {
-				commitData.logSystem = ILogSystem::fromServerDBInfo(proxy.id(), commitData.db->get(), false, addActor);
+				commitData.logSystem = ILogSystem::fromClientDBInfo(proxy.id(), commitData.db->get().client, false, addActor);
 				for(auto it : commitData.tag_popped) {
 					commitData.logSystem->pop(it.second, it.first);
 				}

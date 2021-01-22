@@ -356,6 +356,12 @@ public:
 
 	static bool debugUseTags;
 	static const std::vector<std::string> debugTransactionTagChoices; 
+
+	Reference<ILogSystem> logSystem;
+	std::map<Tag, Reference<ILogSystem::IPeekCursor>> peekCursors;
+	Future<Void> monitorLogSystem;
+
+	[[nodiscard]] Future<Standalone<VectorRef<MutationAndVersionRef>>> getTaggedMutations(Tag tag, Version startVersion);
 };
 
 #endif

@@ -577,7 +577,7 @@ ACTOR Future<Void> logRouterCore(
 		when( wait( dbInfoChange ) ) {
 			dbInfoChange = db->onChange();
 			logRouterData.allowPops = db->get().recoveryState == RecoveryState::FULLY_RECOVERED && db->get().recoveryCount >= req.recoveryCount;
-			logRouterData.logSystem->set(ILogSystem::fromServerDBInfo( logRouterData.dbgid, db->get(), true ));
+			logRouterData.logSystem->set(ILogSystem::fromClientDBInfo( logRouterData.dbgid, db->get().client, true ));
 		}
 		when( TLogPeekRequest req = waitNext( interf.peekMessages.getFuture() ) ) {
 			addActor.send( logRouterPeekMessages( &logRouterData, req ) );
@@ -594,7 +594,7 @@ ACTOR Future<Void> checkRemoved(Reference<AsyncVar<ServerDBInfo>> db, uint64_t r
 		bool isDisplaced =
 		    ((db->get().recoveryCount > recoveryCount && db->get().recoveryState != RecoveryState::UNINITIALIZED) ||
 		     (db->get().recoveryCount == recoveryCount && db->get().recoveryState == RecoveryState::FULLY_RECOVERED));
-		isDisplaced = isDisplaced && !db->get().logSystemConfig.hasLogRouter(myInterface.id());
+		isDisplaced = isDisplaced && !db->get().client.logSystemConfig.hasLogRouter(myInterface.id());
 		if (isDisplaced) {
 			throw worker_removed();
 		}

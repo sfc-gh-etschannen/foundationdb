@@ -1162,7 +1162,7 @@ ACTOR Future<Void> monitorServerDBInfo(Reference<AsyncVar<Optional<ClusterContro
                                        Reference<AsyncVar<ServerDBInfo>> dbInfo) {
 	// Initially most of the serverDBInfo is not known, but we know our locality right away
 	ServerDBInfo localInfo;
-	localInfo.myLocality = locality;
+	localInfo.client.myLocality = locality;
 	dbInfo->set(localInfo);
 
 	loop {
@@ -1176,7 +1176,7 @@ ACTOR Future<Void> monitorServerDBInfo(Reference<AsyncVar<Optional<ClusterContro
 				.detail("RatekeeperID", localInfo.ratekeeper.present() ? localInfo.ratekeeper.get().id() : UID())
 				.detail("DataDistributorID", localInfo.distributor.present() ? localInfo.distributor.get().id() : UID());
 
-				localInfo.myLocality = locality;
+				localInfo.client.myLocality = locality;
 				dbInfo->set(localInfo);
 			}
 			when( wait( ccInterface->onChange() ) ) {

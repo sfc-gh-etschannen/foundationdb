@@ -60,7 +60,7 @@ struct RollbackWorkload : TestWorkload {
 
 	ACTOR Future<Void> simulateFailure( Database cx, RollbackWorkload* self ) {
 		state ServerDBInfo system = self->dbInfo->get();
-		auto tlogs = system.logSystemConfig.allPresentLogs();
+		auto tlogs = system.client.logSystemConfig.allPresentLogs();
 
 		if (tlogs.empty() || system.client.commitProxies.empty()) {
 			TraceEvent(SevInfo, "UnableToTriggerRollback").detail("Reason", "No tlogs in System Map");

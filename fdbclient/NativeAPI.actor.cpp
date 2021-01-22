@@ -2879,6 +2879,17 @@ ACTOR Future<Standalone<VectorRef<const char*>>> getAddressesForKeyActor(Key key
 	return addresses;
 }
 
+ACTOR monitorDBInfo(Database cx) {
+	loop {
+		wait(cx->clientInfo->onChange());
+	}
+}
+
+ACTOR Future<Standalone<VectorRef<MutationAndVersionRef>>> getTaggedMutations(Database cx, Tag tag, Version startVersion) {
+	state Standalone<VectorRef<MutationAndVersionRef>> result;
+	return result;
+}
+
 Future< Standalone< VectorRef< const char*>>> Transaction::getAddressesForKey( const Key& key ) {
 	++cx->transactionLogicalReads;
 	++cx->transactionGetAddressesForKeyRequests;

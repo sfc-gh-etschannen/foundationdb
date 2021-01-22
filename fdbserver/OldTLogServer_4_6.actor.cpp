@@ -1092,10 +1092,10 @@ namespace oldTLog_4_6 {
 			auto const& inf = self->dbInfo->get();
 			bool isDisplaced = !std::count( inf.priorCommittedLogServers.begin(), inf.priorCommittedLogServers.end(), tli.id() );
 			isDisplaced = isDisplaced && inf.recoveryCount >= recoveryCount &&
-			              inf.recoveryState != RecoveryState::UNINITIALIZED && !inf.logSystemConfig.hasTLog(tli.id());
+			              inf.recoveryState != RecoveryState::UNINITIALIZED && !inf.client.logSystemConfig.hasTLog(tli.id());
 			if (isDisplaced) {
 				TraceEvent("TLogDisplaced", tli.id()).detail("Reason", "DBInfoDoesNotContain").detail("RecoveryCount", recoveryCount).detail("InfRecoveryCount", inf.recoveryCount).detail("RecoveryState", (int)inf.recoveryState)
-					.detail("LogSysConf", describe(inf.logSystemConfig.tLogs)).detail("PriorLogs", describe(inf.priorCommittedLogServers)).detail("OldLogGens", inf.logSystemConfig.oldTLogs.size());
+					.detail("LogSysConf", describe(inf.client.logSystemConfig.tLogs)).detail("PriorLogs", describe(inf.priorCommittedLogServers)).detail("OldLogGens", inf.client.logSystemConfig.oldTLogs.size());
 				if (BUGGIFY) wait( delay( SERVER_KNOBS->BUGGIFY_WORKER_REMOVED_MAX_LAG * deterministicRandom()->random01() ) );
 				throw worker_removed();
 			}

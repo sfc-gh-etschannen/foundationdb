@@ -109,6 +109,8 @@ struct ClientDBInfo {
 	Optional<Value> forward;
 	double transactionTagSampleRate;
 	double transactionTagSampleCost;
+	LocalityData myLocality;       // (Not serialized) Locality information, if available, for the *local* process
+	LogSystemConfig logSystemConfig;
 
 	ClientDBInfo()
 	  : clientTxnInfoSampleRate(std::numeric_limits<double>::infinity()), clientTxnInfoSizeLimit(-1),
@@ -124,7 +126,7 @@ struct ClientDBInfo {
 			ASSERT(ar.protocolVersion().isValid());
 		}
 		serializer(ar, grvProxies, commitProxies, id, clientTxnInfoSampleRate, clientTxnInfoSizeLimit, forward,
-		           transactionTagSampleRate, transactionTagSampleCost);
+		           transactionTagSampleRate, transactionTagSampleCost, logSystemConfig);
 	}
 };
 

@@ -1932,16 +1932,16 @@ ACTOR Future<Void> rejoinMasters( TLogData* self, TLogInterface tli, DBRecoveryC
 		} else {
 			isDisplaced = isDisplaced && ( ( inf.recoveryCount > recoveryCount && inf.recoveryState != RecoveryState::UNINITIALIZED ) || ( inf.recoveryCount == recoveryCount && inf.recoveryState == RecoveryState::FULLY_RECOVERED ) );
 		}
-		isDisplaced = isDisplaced && !inf.logSystemConfig.hasTLog(tli.id());
+		isDisplaced = isDisplaced && !inf.client.logSystemConfig.hasTLog(tli.id());
 		if (isDisplaced) {
 			TraceEvent("TLogDisplaced", tli.id())
 			    .detail("Reason", "DBInfoDoesNotContain")
 			    .detail("RecoveryCount", recoveryCount)
 			    .detail("InfRecoveryCount", inf.recoveryCount)
 			    .detail("RecoveryState", (int)inf.recoveryState)
-			    .detail("LogSysConf", describe(inf.logSystemConfig.tLogs))
+			    .detail("LogSysConf", describe(inf.client.logSystemConfig.tLogs))
 			    .detail("PriorLogs", describe(inf.priorCommittedLogServers))
-			    .detail("OldLogGens", inf.logSystemConfig.oldTLogs.size());
+			    .detail("OldLogGens", inf.client.logSystemConfig.oldTLogs.size());
 			if (BUGGIFY) wait( delay( SERVER_KNOBS->BUGGIFY_WORKER_REMOVED_MAX_LAG * deterministicRandom()->random01() ) );
 			throw worker_removed();
 		}
@@ -2148,15 +2148,15 @@ ACTOR Future<Void> serveTLogInterface( TLogData* self, TLogInterface tli, Refere
 			dbInfoChange = self->dbInfo->onChange();
 			bool found = false;
 			if(self->dbInfo->get().recoveryState >= RecoveryState::ACCEPTING_COMMITS) {
-				for(auto& logs : self->dbInfo->get().logSystemConfig.tLogs) {
+				for(auto& logs : self->dbInfo->get().client.logSystemConfig.tLogs) {
 					if( std::count( logs.tLogs.begin(), logs.tLogs.end(), logData->logId ) ) {
 						found = true;
 						break;
 					}
 				}
 			}
-			if(found && self->dbInfo->get().logSystemConfig.recruitmentID == logData->recruitmentID) {
-				logData->logSystem->set(ILogSystem::fromServerDBInfo( self->dbgid, self->dbInfo->get() ));
+			if(found && self->dbInfo->get().client.logSystemConfig.recruitmentID == logData->recruitmentID) {
+				logData->logSystem->set(ILogSystem::fromClientDBInfo( self->dbgid, self->dbInfo->get().client ));
 				if(!logData->isPrimary) {
 					logData->logSystem->get()->pop(logData->logRouterPoppedVersion, logData->remoteTag, logData->durableKnownCommittedVersion, logData->locality);
 				}
@@ -2696,16 +2696,16 @@ bool tlogTerminated( TLogData* self, IKeyValueStore* persistentData, TLogQueue* 
 ACTOR Future<Void> updateLogSystem(TLogData* self, Reference<LogData> logData, LogSystemConfig recoverFrom, Reference<AsyncVar<Reference<ILogSystem>>> logSystem) {
 	loop {
 		bool found = false;
-		if(self->dbInfo->get().logSystemConfig.recruitmentID == logData->recruitmentID) {
-			if( self->dbInfo->get().logSystemConfig.isNextGenerationOf(recoverFrom) ) {
-				logSystem->set(ILogSystem::fromOldLogSystemConfig( logData->logId, self->dbInfo->get().myLocality, self->dbInfo->get().logSystemConfig ));
+		if(self->dbInfo->get().client.logSystemConfig.recruitmentID == logData->recruitmentID) {
+			if( self->dbInfo->get().client.logSystemConfig.isNextGenerationOf(recoverFrom) ) {
+				logSystem->set(ILogSystem::fromOldLogSystemConfig( logData->logId, self->dbInfo->get().client.myLocality, self->dbInfo->get().client.logSystemConfig ));
 				found = true;
-			} else if( self->dbInfo->get().logSystemConfig.isEqualIds(recoverFrom) ) {
-				logSystem->set(ILogSystem::fromLogSystemConfig( logData->logId, self->dbInfo->get().myLocality, self->dbInfo->get().logSystemConfig, false, true ));
+			} else if( self->dbInfo->get().client.logSystemConfig.isEqualIds(recoverFrom) ) {
+				logSystem->set(ILogSystem::fromLogSystemConfig( logData->logId, self->dbInfo->get().client.myLocality, self->dbInfo->get().client.logSystemConfig, false, true ));
 				found = true;
 			}
 			else if( self->dbInfo->get().recoveryState >= RecoveryState::ACCEPTING_COMMITS ) {
-				logSystem->set(ILogSystem::fromLogSystemConfig( logData->logId, self->dbInfo->get().myLocality, self->dbInfo->get().logSystemConfig, true ));
+				logSystem->set(ILogSystem::fromLogSystemConfig( logData->logId, self->dbInfo->get().client.myLocality, self->dbInfo->get().client.logSystemConfig, true ));
 				found = true;
 			}
 		}
@@ -2714,8 +2714,8 @@ ACTOR Future<Void> updateLogSystem(TLogData* self, Reference<LogData> logData, L
 		} else {
 			logData->logSystem->get()->pop(logData->logRouterPoppedVersion, logData->remoteTag, logData->durableKnownCommittedVersion, logData->locality);
 		}
-		TraceEvent("TLogUpdate", self->dbgid).detail("LogId", logData->logId).detail("RecruitmentID", logData->recruitmentID).detail("DbRecruitmentID", self->dbInfo->get().logSystemConfig.recruitmentID).detail("RecoverFrom", recoverFrom.toString()).detail("DbInfo", self->dbInfo->get().logSystemConfig.toString()).detail("Found", found).detail("LogSystem", (bool) logSystem->get() ).detail("RecoveryState", (int)self->dbInfo->get().recoveryState);
-		for(auto it : self->dbInfo->get().logSystemConfig.oldTLogs) {
+		TraceEvent("TLogUpdate", self->dbgid).detail("LogId", logData->logId).detail("RecruitmentID", logData->recruitmentID).detail("DbRecruitmentID", self->dbInfo->get().client.logSystemConfig.recruitmentID).detail("RecoverFrom", recoverFrom.toString()).detail("DbInfo", self->dbInfo->get().client.logSystemConfig.toString()).detail("Found", found).detail("LogSystem", (bool) logSystem->get() ).detail("RecoveryState", (int)self->dbInfo->get().recoveryState);
+		for(auto it : self->dbInfo->get().client.logSystemConfig.oldTLogs) {
 			TraceEvent("TLogUpdateOld", self->dbgid).detail("LogId", logData->logId).detail("DbInfo", it.toString());
 		}
 		wait( self->dbInfo->onChange() );

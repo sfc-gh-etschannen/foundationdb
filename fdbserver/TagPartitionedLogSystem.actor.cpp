@@ -2822,6 +2822,6 @@ Reference<ILogSystem> ILogSystem::fromOldLogSystemConfig( UID const& dbgid, stru
 		throw internal_error();
 }
 
-Reference<ILogSystem> ILogSystem::fromServerDBInfo( UID const& dbgid, ServerDBInfo const& dbInfo, bool useRecoveredAt, Optional<PromiseStream<Future<Void>>> addActor ) {
+Reference<ILogSystem> ILogSystem::fromClientDBInfo( UID const& dbgid, ClientDBInfo const& dbInfo, bool useRecoveredAt, Optional<PromiseStream<Future<Void>>> addActor ) {
 	return fromLogSystemConfig( dbgid, dbInfo.myLocality, dbInfo.logSystemConfig, false, useRecoveredAt, addActor );
 }
