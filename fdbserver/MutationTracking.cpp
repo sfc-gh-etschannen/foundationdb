@@ -20,7 +20,7 @@
 
 #include <vector>
 #include "fdbserver/MutationTracking.h"
-#include "fdbserver/LogProtocolMessage.h"
+#include "fdbclient/LogProtocolMessage.h"
 #include "fdbserver/SpanContextMessage.h"
 
 #if defined(FDB_CLEAN_BUILD) && MUTATION_TRACKING_ENABLED

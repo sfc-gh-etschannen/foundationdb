@@ -26,7 +26,7 @@
 
 #include "fdbclient/NativeAPI.actor.h"
 #include "fdbserver/MoveKeys.actor.h"
-#include "fdbserver/LogSystem.h"
+#include "fdbclient/LogSystem.h"
 #include "flow/actorcompiler.h" // This must be the last #include.
 
 struct RelocateShard {

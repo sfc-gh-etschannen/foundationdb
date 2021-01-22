@@ -36,7 +36,7 @@
 #include "fdbserver/MoveKeys.actor.h"
 #include "fdbserver/QuietDatabase.h"
 #include "fdbserver/ServerDBInfo.h"
-#include "fdbserver/TLogInterface.h"
+#include "fdbclient/TLogInterface.h"
 #include "fdbserver/WaitFailure.h"
 #include "flow/ActorCollection.h"
 #include "flow/Arena.h"

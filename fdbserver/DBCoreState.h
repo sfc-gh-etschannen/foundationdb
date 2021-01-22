@@ -26,7 +26,7 @@
 
 #include "fdbclient/FDBTypes.h"
 #include "fdbrpc/ReplicationPolicy.h"
-#include "fdbserver/LogSystemConfig.h"
+#include "fdbclient/LogSystemConfig.h"
 #include "fdbserver/MasterInterface.h"
 
 class LogSet;

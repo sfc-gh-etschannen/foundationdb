@@ -34,7 +34,7 @@
 #include "fdbserver/MoveKeys.actor.h"
 #include "fdbserver/WorkerInterface.actor.h"
 #include "fdbserver/LeaderElection.h"
-#include "fdbserver/LogSystemConfig.h"
+#include "fdbclient/LogSystemConfig.h"
 #include "fdbserver/WaitFailure.h"
 #include "fdbserver/RatekeeperInterface.h"
 #include "fdbserver/ServerDBInfo.h"

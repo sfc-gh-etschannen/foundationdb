@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "fdbserver/SpanContextMessage.h"
-#include "fdbserver/TLogInterface.h"
+#include "fdbclient/TLogInterface.h"
 #include "fdbserver/WorkerInterface.actor.h"
 #include "fdbclient/DatabaseConfiguration.h"
 #include "fdbserver/MutationTracking.h"

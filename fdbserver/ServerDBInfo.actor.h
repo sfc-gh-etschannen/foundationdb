@@ -28,7 +28,7 @@
 
 #include "fdbserver/DataDistributorInterface.h"
 #include "fdbserver/MasterInterface.h"
-#include "fdbserver/LogSystemConfig.h"
+#include "fdbclient/LogSystemConfig.h"
 #include "fdbserver/RatekeeperInterface.h"
 #include "fdbserver/RecoveryState.h"
 #include "fdbserver/LatencyBandConfig.h"

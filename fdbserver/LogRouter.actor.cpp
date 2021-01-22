@@ -25,7 +25,7 @@
 #include "fdbserver/WaitFailure.h"
 #include "fdbserver/Knobs.h"
 #include "fdbserver/ServerDBInfo.h"
-#include "fdbserver/LogSystem.h"
+#include "fdbclient/LogSystem.h"
 #include "fdbclient/SystemData.h"
 #include "fdbserver/ApplyMetadataMutation.h"
 #include "fdbserver/RecoveryState.h"

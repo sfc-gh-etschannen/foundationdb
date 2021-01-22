@@ -24,8 +24,8 @@
 #include "fdbclient/Notified.h"
 #include "fdbserver/ApplyMetadataMutation.h"
 #include "fdbserver/IKeyValueStore.h"
-#include "fdbserver/LogSystem.h"
-#include "fdbserver/LogProtocolMessage.h"
+#include "fdbclient/LogSystem.h"
+#include "fdbclient/LogProtocolMessage.h"
 
 
 Reference<StorageInfo> getStorageInfo(UID id, std::map<UID, Reference<StorageInfo>>* storageCache, IKeyValueStore* txnStateStore) {

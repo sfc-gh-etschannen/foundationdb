@@ -25,7 +25,7 @@
 #include "fdbclient/KeyRangeMap.h"
 #include "fdbclient/SystemData.h"
 #include "fdbserver/WorkerInterface.actor.h"
-#include "fdbserver/TLogInterface.h"
+#include "fdbclient/TLogInterface.h"
 #include "fdbserver/Knobs.h"
 #include "fdbserver/IKeyValueStore.h"
 #include "flow/ActorCollection.h"
@@ -34,7 +34,7 @@
 #include "fdbrpc/sim_validation.h"
 #include "fdbrpc/Stats.h"
 #include "fdbserver/ServerDBInfo.h"
-#include "fdbserver/LogSystem.h"
+#include "fdbclient/LogSystem.h"
 #include "fdbserver/WaitFailure.h"
 #include "flow/actorcompiler.h"  // This must be the last #include.
 

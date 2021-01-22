@@ -19,7 +19,7 @@
  */
 
 #include "fdbclient/Notified.h"
-#include "fdbserver/LogSystem.h"
+#include "fdbclient/LogSystem.h"
 #include "fdbserver/LogSystemDiskQueueAdapter.h"
 #include "fdbclient/CommitProxyInterface.h"
 #include "fdbclient/GrvProxyInterface.h"

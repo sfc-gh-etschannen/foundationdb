@@ -27,8 +27,8 @@
 #include "fdbclient/BackupAgent.actor.h"
 #include "fdbclient/Notified.h"
 #include "fdbserver/IKeyValueStore.h"
-#include "fdbserver/LogSystem.h"
-#include "fdbserver/LogProtocolMessage.h"
+#include "fdbclient/LogSystem.h"
+#include "fdbclient/LogProtocolMessage.h"
 #include "fdbserver/ProxyCommitData.actor.h"
 
 inline bool isMetadataMutation(MutationRef const& m) {

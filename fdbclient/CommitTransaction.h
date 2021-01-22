@@ -66,7 +66,7 @@ struct MutationRef {
 		Xor,
 		AppendIfFits,
 		AvailableForReuse,
-		Reserved_For_LogProtocolMessage /* See fdbserver/LogProtocolMessage.h */,
+		Reserved_For_LogProtocolMessage /* See fdbclient/LogProtocolMessage.h */,
 		Max,
 		Min,
 		SetVersionstampedKey,

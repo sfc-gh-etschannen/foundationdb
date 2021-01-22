@@ -18,7 +18,7 @@
  * limitations under the License.
  */
 
-#include "fdbserver/LogSystem.h"
+#include "fdbclient/LogSystem.h"
 #include "fdbrpc/FailureMonitor.h"
 #include "fdbserver/Knobs.h"
 #include "fdbserver/MutationTracking.h"
