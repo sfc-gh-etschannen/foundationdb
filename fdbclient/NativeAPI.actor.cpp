@@ -65,6 +65,7 @@
 #include "flow/Tracing.h"
 #include "flow/UnitTest.h"
 #include "flow/serialize.h"
+#include "fdbclient/LogProtocolMessage.h"
 
 #ifdef WIN32
 #define WIN32_LEAN_AND_MEAN
@@ -2912,7 +2913,7 @@ ACTOR Future<Standalone<VectorRef<MutationAndVersionRef>>> getTaggedMutations(Da
 					}
 					when (wait(onInfoChange)) {
 						if (cx->getLogSystem()) {
-							cursor = cx->getLogSystem()->peek(cx->dbId, startVersion, tag);
+							cursor = cx->getLogSystem()->peek(cx->dbId, startVersion, Optional<Verison>(), tag);
 						} else {
 							cursor = Reference<ILogSystem::IPeekCursor>();
 						}

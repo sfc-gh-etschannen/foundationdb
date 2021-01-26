@@ -219,6 +219,14 @@ struct CommitTransactionRef {
 struct MutationAndVersionRef {
 	MutationRef mutation;
 	LogMessageVersion version;
+
+	MutationAndVersionRef() {}
+	MutationAndVersionRef( Arena& to, const MutationAndVersionRef& from ) : mutation(to, from.mutation), version(version) {}
+	int expectedSize() const { return mutation.size(); }
+
+	std::string toString() const {
+		return format("version: %s mutation: %s", version.toString().c_str(), mutation.toString().c_str());
+	}
 };
 
 #endif
